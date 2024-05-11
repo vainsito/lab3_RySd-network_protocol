@@ -56,7 +56,7 @@ void Queue::handleMessage(cMessage *msg) {
     } else { // if msg is a data packet
         if (buffer.getLength() >= par("bufferSize").intValue()) {
             // drop the packet
-            delete(msg);
+            delete msg;
             this->bubble("packet-dropped");
             packetDropVector.record(1);
         } else {
