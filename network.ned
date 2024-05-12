@@ -59,7 +59,7 @@ module NodeTx
             parameters:
                 generationInterval;
                 packetByteSize;
-                @display("p=75, 50");S
+                @display("p=75, 50");
         }
         tranTx: TransportTx{
             parameters:
@@ -67,6 +67,7 @@ module NodeTx
                 @display("p=75, 190");
         }
    connections:
+       in --> tranTx.toOut$i;
        gen.out --> tranTx.toApp;
        tranTx.toOut$o --> out;
 }
