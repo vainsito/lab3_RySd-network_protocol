@@ -1,5 +1,5 @@
-#ifndef TRANSPORTRX
-#define TRANSPORTRX
+#ifndef TRANSPORT_RX
+#define TRANSPORT_RX
 
 #include <string.h>
 #include <omnetpp.h>
@@ -14,17 +14,19 @@ class TransportRx: public cSimpleModule {
         cQueue buffer; //El buffer mismo
         cQueue bufferStatus; //Informacion del buffer
 
-        bool statusSend; Podriamos modularizar;
+        bool fullBuffer;
 
         cMessage *endServiceEvent;
         cMessage *sendStatusEvent; //Evento que informa a la entidad que envie una respuesta
 
         int packetsDropped;
         cOutVector bufferSizeVector;
-        cOutVector packetDropVector;
+        cOutVector bufferDropVector;
+
+        simtime_t serviceTime;
 
         //Funcion protocolo
-        void protocol(cMessage *msg);
+        void protocol1(cMessage *msg);
     public:
         TransportRx();
         virtual ~TransportRx();
@@ -52,81 +54,89 @@ void TransportRx::initialize(){
     buffer.setName("Receptor buffer");
     bufferStatus.setName("Receptor status buffer");
 
+    packetsDropped = 0;
     endServiceEvent = new cMessage("endService");
     sendStatusEvent = new cMessage("sendStatus");
+
+    bufferSizeVector.setName("buffer size");
+    bufferDropVector.setName("packetDrop");
+
+    bufferDropVector.record(0);
+    fullBuffer = false;
+
+
 }
 
 void TransportRx::finish(){
-    recordScalar("Dropped packets", packetDropVector.getCount()); //No se si esto esta bien
 }
 
-void TransportRx::protocol(cMessage *msg){
-    const int bufferMaxSize = par("buffersize").intValue();
-    int umbral = 0.5 * bufferMaxSize;
-
-    //Si el buffer se encuentra mas alla de su capacidad, borramos el mensaje y aumentamos la cantidad de paquetes dropeados
-    if (buffer.getLenth() >= bufferMaxSize){
-        delete msg;
-
-        this->bubble("packet dropped");
-
-        packetsDropped++;
-        packetDropVector.record(packetsDropped);
-    } else {
-        //Si el buffer supera el umbral, crea un mensaje de estatus
-        if (buffer.getLength() >= umbral){
-            cPacket *statusMsg = new cPacket();
-            statusMsg->setKind(2); //Setea su tipo en 2
-            statusMsg->setByteLength(1); //Asigna su tamaño de 1 byte
-            statusMsg->setFullBuffer(true);
-
-            bufferStatus.inster(msg);
-            if(!sendStatusEvent->isScheduled()){
-                scheduleAt(simTime()+0, sendStatusEvent);
-            }
+void TransportRx::protocol1(cMessage *msg){
+    if (msg->getKind() == 2 || msg->getKind() == 3){
+        bufferStatus.insert(msg);
+        if(!sendStatusEvent->isScheduled()){
+            scheduleAt(simTime()+0, sendStatusEvent);
         }
-        //Insertamos mensaje al buffer
+    } else {
+        const int bufferMaxSize = par("bufferSize").intValue();
+        int umbral = 0.8 * bufferMaxSize;
+
+        //Si el buffer se encuentra mas alla de su capacidad, borramos el mensaje y aumentamos la cantidad de paquetes dropeados
+            //Si el buffer supera el umbral, crea un mensaje de estatus
+        if (buffer.getLength() >= umbral && !fullBuffer){
+            cPacket *statusMsg = new cPacket("statusMsg");
+            statusMsg->setKind(2); //Setea su tipo en 2
+            statusMsg->setByteLength(20); //Asigna su tamaño de 1 byte
+            buffer.insertBefore(buffer.front(), statusMsg);
+            fullBuffer = true;
+
+        } else if (buffer.getLength() >= umbral && fullBuffer){
+            cPacket *statusMsg = new cPacket("statusMsg");
+            statusMsg->setKind(3); //Setea su tipo en 2
+            statusMsg->setByteLength(20); //Asigna su tamaño de 1 byte
+            fullBuffer = false;
+            buffer.insertBefore(buffer.front(), statusMsg);
+        }
+            //Insertamos mensaje al buffer
         buffer.insert(msg);
+        bufferSizeVector.record(buffer.getLength());
 
         if(!endServiceEvent->isScheduled()){
-            sheduleAt(simTime() + 0, endServiceEvent);
+            scheduleAt(simTime() + 0, endServiceEvent);
         }
     }
 }
-void TransportRx::HandleMessage(cMessage *msg){
-    // if msg is signaling an endServiceEvent
-    if (msg == endServiceEvent) {
-        // if packet in buffer, send next one
-        if (!buffer.isEmpty()) {
-            // dequeue packet
-            cPacket *pkt = (cPacket*) buffer.pop();
-            // send packet
-            send(pkt, "toApp");
-            serviceTime = pkt->getDuration();
-            scheduleAt(simTime() + serviceTime, endServiceEvent);
-        }
-    } else if (msg == sendStatusEvent){
-        if (!bufferStatus.isEmpty()){
-            // Si nuestra queue de estado no esta vacia, desencolamos y enviamos como con EndService
-            cPacket *statuspkt = (cPacket*) bufferStatus.pop();
-            //Mandamos el estado
-            send(statuspkt,"toOut$o");
-
-            serviceTime = pkt->getDuration();
-            scheduleAt(simTime() + serviceTime, sendStatusEvent);
-        }
-    } else { // if msg is a data packet
-        if (msg->getKind() == 2){
-            //Encola los mensajes de tipo Status en el buffer de status
-            bufferStatus.inster(msg);
-            if(!sendStatusEvent->isScheduled()){
-                scheduleAt(simTime()+0, sendStatusEvent);
+void TransportRx::handleMessage(cMessage *msg){
+        // if msg is signaling an endServiceEvent
+        if (msg == endServiceEvent) {
+            // if packet in buffer, send next one
+            if (!buffer.isEmpty()) {
+                // dequeue packet
+                cPacket *pkt = (cPacket*) buffer.pop();
+                // send packet
+                send(pkt, "toApp");
+                serviceTime = pkt->getDuration();
+                scheduleAt(simTime() + serviceTime, endServiceEvent);
             }
-        } else {
-            protocol(msg);
+        } else if (msg == sendStatusEvent) {
+            if (!bufferStatus.isEmpty()){
+                // Si nuestra queue de estado no esta vacia, desencolamos y enviamos como con EndService
+                cPacket *statuspkt = (cPacket*) bufferStatus.pop();
+                //Mandamos el estado
+                send(statuspkt,"toOut$o");
+
+                serviceTime = statuspkt->getDuration();
+                scheduleAt(simTime() + serviceTime, sendStatusEvent);
+            }
+        } else { // if msg is a data packet
+            if (buffer.getLength() >= par("bufferSize").intValue()){
+                delete msg;
+                this->bubble("packet dropped");
+                bufferDropVector.record(1);
+            } else {
+                protocol1(msg);
+            }
         }
         // enqueue the packet
-    }
 }
 
 #endif

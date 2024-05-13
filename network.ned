@@ -34,7 +34,7 @@ simple TransportTx
         @display("i=block/queue;q=buffer");
     gates:
         input toApp;
-        inout toOut;
+        inout toOut; //Aca, ves?
 }   
 
 simple TransportRx
@@ -53,7 +53,7 @@ module NodeTx
         @display("i=block/routing");
     gates:
         input in;
-        output out;
+        output out; 
     submodules:
         gen: Generator{
             parameters:
@@ -61,15 +61,15 @@ module NodeTx
                 packetByteSize;
                 @display("p=75, 50");
         }
-        tranTx: TransportTx{
+        tranTx: TransportTx{ 
             parameters:
                 bufferSize;
                 @display("p=75, 190");
         }
    connections:
-       in --> tranTx.toOut$i;
-       gen.out --> tranTx.toApp;
-       tranTx.toOut$o --> out;
+       in --> tranTx.toOut$i; 
+       gen.out --> tranTx.toApp; 
+       tranTx.toOut$o --> out; 
 }
 
 module NodeRx

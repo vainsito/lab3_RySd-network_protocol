@@ -13,6 +13,7 @@ private:
     cQueue buffer;
     cMessage *endServiceEvent;
     simtime_t serviceTime;
+    float packetRate;
 public:
     TransportTx();
     virtual ~TransportTx();
@@ -38,7 +39,7 @@ void TransportTx::initialize() {
     packetDropQueue.setName("packetDropQueue"); 
     packetDropQueue.record(0); // Inicializa el vector en 0
     endServiceEvent = new cMessage("endService"); // Creo el mensaje de fin de servicio
-    packetRate = 1.0
+    packetRate = 1.0;
 }
 
 void TransportTx::finish() {}
@@ -51,7 +52,7 @@ void TransportTx::handleMessage(cMessage *msg) {
             // Desencola el paquete
             cPacket *pkt = (cPacket*) buffer.pop();
             // Envio del paquete
-            send(pkt, "out");
+            send(pkt, "toOut$o");
             // Empiezo un nuevo servicio
             serviceTime = pkt->getDuration();
             scheduleAt(simTime() + serviceTime, endServiceEvent);

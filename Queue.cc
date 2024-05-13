@@ -13,6 +13,12 @@ private:
     cQueue buffer;
     cMessage *endServiceEvent;
     simtime_t serviceTime;
+
+    int packetsDropped;
+
+    bool fullBufferQueue;
+
+    void protocol2(cMessage *msg);
 public:
     Queue();
     virtual ~Queue();
@@ -39,6 +45,7 @@ void Queue::initialize() {
 
     packetDropVector.record(0);
     endServiceEvent = new cMessage("endService");
+    fullBufferQueue = false;
 
 }
 
@@ -46,8 +53,46 @@ void Queue::initialize() {
 void Queue::finish() {
 }
 
+void Queue::protocol2(cMessage *msg){
+    const int bufferMaxSize = par("bufferSize").intValue();
+    int umbral = 0.8 * bufferMaxSize;
+
+    //Si el buffer se encuentra mas alla de su capacidad, borramos el mensaje y aumentamos la cantidad de paquetes dropeados
+    if (buffer.getLength() >= bufferMaxSize){
+        delete msg;
+
+        this->bubble("packet dropped");
+        packetDropVector.record(1);
+
+    } else {
+        //Si el buffer supera el umbral, crea un mensaje de estatus
+        if (buffer.getLength() >= umbral && !fullBufferQueue){
+            cPacket *statusMsg = new cPacket("statusMsg");
+            statusMsg->setKind(2); //Setea su tipo en 2
+            statusMsg->setByteLength(1); //Asigna su tamaño de 1 byte
+            fullBufferQueue = true;
+            buffer.insertBefore(buffer.front(), statusMsg);
+
+        } else if (buffer.getLength() >= umbral && fullBufferQueue){
+            cPacket *statusMsg = new cPacket("statusMsg");
+            statusMsg->setKind(3); //Setea su tipo en 2
+            statusMsg->setByteLength(1); //Asigna su tamaño de 1 byte
+            fullBufferQueue = false;
+            buffer.insertBefore(buffer.front(), statusMsg);
+        }
+        //Insertamos mensaje al buffer
+        buffer.insert(msg);
+        bufferSizeVector.record(buffer.getLength());
+
+        if(!endServiceEvent->isScheduled()){
+            scheduleAt(simTime() + 0, endServiceEvent);
+        }
+    }
+}
+
 void Queue::handleMessage(cMessage *msg) {
 
+    bufferSizeVector.record(buffer.getLength());
     // if msg is signaling an endServiceEvent
     if (msg == endServiceEvent) {
         // if packet in buffer, send next one
@@ -60,20 +105,7 @@ void Queue::handleMessage(cMessage *msg) {
             scheduleAt(simTime() + serviceTime, endServiceEvent);
         }
     } else { // if msg is a data packet
-        if (buffer.getLength() >= par("bufferSize").intValue()) {
-            // drop the packet
-            delete msg;
-            this->bubble("packet-dropped");
-            packetDropVector.record(1);
-        } else {
-            buffer.insert(msg);
-            bufferSizeVector.record(buffer.getLength());
-            // if the server is idle
-            if (!endServiceEvent->isScheduled()) {
-                // start the service
-                scheduleAt(simTime() + 0, endServiceEvent);
-            }
-        }
+        protocol2(msg);
         // enqueue the packet
     }
 }
