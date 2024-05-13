@@ -1,9 +1,9 @@
-file 170115 1715385629                                          
+file 77548 1715619321                                           
 version 3
-run General-0-20240510-20:58:45-1405
+run General-0-20240513-13:54:27-11078
 attr configname General
-attr datetime 20240510-20:58:45
-attr datetimef 20240510-205845
+attr datetime 20240513-13:54:27
+attr datetimef 20240513-135427
 attr experiment General
 attr inifile omnetpp.ini
 attr iterationvars ""
@@ -11,7 +11,7 @@ attr iterationvarsd ""
 attr iterationvarsf ""
 attr measurement ""
 attr network Network
-attr processid 1405
+attr processid 11078
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -28,14 +28,22 @@ config Network.nodeTx.gen.generationInterval exponential(0.1)
 config Network.nodeTx.queue.bufferSize 2000000
 config Network.nodeTx.queue.serviceTime exponential(0.001)
 
-vector 0 Network.nodeTx.queue "" ETV
-vector 1 Network.queue "" ETV
-vector 2 Network.nodeRx.queue "" ETV
-vector 3 Network.nodeRx.sink Delay ETV
-vector 4 Network.queue "" ETV
-0	1034 51626 2 12930 0.079587450457 199.995645792347 1979 1 33 25871 472807
-1	52660 32595 7 12921 0.179687450457 199.874681545182 1199 1 200 197981 36886541
-2	85255 25569 15 12927 0.379787450457 199.979787450457 999 1 1 999 999
-3	110824 39307 19 12922 0.479787450457 199.879787450457 998 0.4002 43.505080820183 32813.709898024 1244163.289656
-4	150131 19983 2756 12925 42.881753423165 199.974681545182 771 1 1 771 771
+vector 0 Network.nodeTx.queue packetsDrop ETV
+vector 1 Network.queue packetsDrop ETV
+vector 2 Network.nodeRx.queue packetsDrop ETV
+vector 3 Network.nodeTx.gen packetGen ETV
+vector 4 Network.nodeTx.queue bufferSizeQueue ETV
+vector 5 Network.queue bufferSizeQueue ETV
+vector 6 Network.nodeRx.queue bufferSizeQueue ETV
+vector 7 Network.nodeRx.sink Delay ETV
+vector 8 Network.nodeRx.sink PacketUsed ETV
+0	1262 8 0 0 0 0 1 0 0 0 0
+1	1270 8 0 0 0 0 1 0 0 0 0
+2	1278 1983 0 4065 0 58.808610483143 80 0 1 79 79
+3	3261 14207 1 4116 0.079587450457 59.850776607976 581 1 1 581 581
+4	17468 14279 2 4117 0.079587450457 59.850776607976 581 1 16 3013 22313
+5	31747 14174 7 4111 0.179687450457 59.802278997619 577 1 1 577 577
+6	45921 12943 12 4113 0.279787450457 59.802378997619 497 1 200 57582 8806940
+7	58864 11359 22 4118 0.479787450457 59.879787450457 298 0.4002 29.871678474572 4436.4656278404 88075.901866954
+8	70223 7324 22 4118 0.479787450457 59.879787450457 298 1 1 298 298
 
