@@ -1,9 +1,9 @@
-file 367835 1715564859                                          
+                                                                
 version 3
-run General-0-20240512-22:44:41-6838
+run General-0-20240515-21:17:35-2999
 attr configname General
-attr datetime 20240512-22:44:41
-attr datetimef 20240512-224441
+attr datetime 20240515-21:17:35
+attr datetimef 20240515-211735
 attr experiment General
 attr inifile omnetpp.ini
 attr iterationvars ""
@@ -11,7 +11,7 @@ attr iterationvarsd ""
 attr iterationvarsf ""
 attr measurement ""
 attr network Network
-attr processid 6838
+attr processid 2999
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -26,24 +26,29 @@ config Network.queue0.bufferSize 200
 config Network.queue1.serviceTime exponential(0.001)
 config Network.queue1.bufferSize 200
 config Network.nodeTx.tranTx.bufferSize 200
+config Network.nodeTx.tranTx.serviceTime exponential(0.001)
 config Network.nodeRx.tranRx.bufferSize 2000000
+config Network.nodeTx.tranRx.serviceTime exponential(0.001)
 
 vector 0 Network.nodeTx.tranTx packetDropQueue ETV
 vector 1 Network.queue0 "packets drop" ETV
 vector 2 Network.queue1 "packets drop" ETV
 vector 3 Network.nodeRx.tranRx packetDrop ETV
-vector 4 Network.nodeTx.tranTx bufferSizeQueue ETV
-vector 5 Network.queue0 bufferSizeQueue ETV
-vector 6 Network.nodeRx.tranRx "buffer size" ETV
-vector 7 Network.nodeRx.sink Delay ETV
-vector 8 Network.queue1 bufferSizeQueue ETV
-0	1247 8 0 0 0 0 1 0 0 0 0
-1	1255 20242 0 19596 0 199.974681545182 773 0 1 772 772
-2	21497 8 0 0 0 0 1 0 0 0 0
-3	21505 8 0 0 0 0 1 0 0 0 0
-4	21513 52068 2 19611 0.079587450457 199.995645792347 1979 1 33 25871 472807
-5	73581 139407 7 19598 0.179687450457 199.993559450457 5035 0 201 897379 171985197
-6	212988 25794 15 19601 0.379787450457 199.993643450457 999 1 1 999 999
-7	238782 39537 26 19599 0.579787450457 199.993627450457 998 0.5002 43.413000820183 32801.105391184 1241371.612666
-8	278319 89515 2040 19608 34.379919450457 199.993791450457 3427 0 1 1734 1734
-
+vector 4 Network.nodeTx.gen PacketGen ETV
+vector 5 Network.nodeTx.tranTx bufferSizeQueue ETV
+vector 6 Network.queue0 bufferSizeQueue ETV
+vector 7 Network.nodeRx.tranRx "buffer size" ETV
+vector 8 Network.nodeRx.sink Delay ETV
+vector 9 Network.nodeRx.sink PacketUsed ETV
+vector 10 Network.queue1 bufferSizeQueue ETV
+0	1454 8 0 0 0 0 1 0 0 0 0
+1	1462 8 0 0 0 0 1 0 0 0 0
+2	1470 8 0 0 0 0 1 0 0 0 0
+3	1478 8 0 0 0 0 1 0 0 0 0
+4	1486 14172 1 3326 0.079587450457 54.475148709595 541 1 541 146611 52926571
+5	15658 13436 2 3327 0.079587450457 54.475148709595 541 1 108 12789 805643
+6	29094 29587 7 3331 0.179687450457 54.580007450457 1142 0 162 114740 14961454
+7	58681 6667 15 3332 0.379787450457 54.580107450457 272 1 1 272 272
+8	65348 10302 19 3328 0.479787450457 54.480107450457 271 0.4002 27.269046928521 3664.0860227494 65966.172731349
+9	75650 6643 19 3328 0.479787450457 54.480107450457 271 1 1 271 271
+10	82293 104 2210 2212 34.380367450457 34.380527450457 4 0 1 2 2

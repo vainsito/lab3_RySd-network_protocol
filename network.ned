@@ -34,7 +34,7 @@ simple TransportTx
         @display("i=block/queue;q=buffer");
     gates:
         input toApp;
-        inout toOut; //Aca, ves?
+        inout toOut; 
 }   
 
 simple TransportRx
@@ -93,9 +93,9 @@ module NodeRx
        in --> tranRx.toOut$i;
        tranRx.toOut$o --> out;
        //case study 1:
-       tranRx.toApp -->{ datarate = 0.5Mbps; } --> sink.in;
+       //tranRx.toApp -->{ datarate = 0.5Mbps; } --> sink.in;
        //case study 2:
-       //tranRx.toApp --> { datarate = 1 Mbps; } --> sink.in;
+       tranRx.toApp --> { datarate = 1 Mbps; } --> sink.in;
 }
 
 network Network
@@ -124,6 +124,6 @@ network Network
         //queue0.out --> { datarate = 1Mbps; delay = 100us; } --> nodeRx.in;
         //case study 2:
         queue0.out --> { datarate = 0.5Mbps; delay = 100us;} --> nodeRx.in;
-        nodeRx.out --> { datarate = 0.5Mbps; delay = 100us;} --> queue1.in;
-        queue1.out --> { datarate = 0.5Mbps; delay = 100us;} --> nodeTx.in;
+        nodeRx.out --> { datarate = 1Mbps; delay = 100us;} --> queue1.in;
+        queue1.out --> { datarate = 1Mbps; delay = 100us;} --> nodeTx.in;
 }

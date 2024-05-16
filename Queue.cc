@@ -14,11 +14,12 @@ private:
     cMessage *endServiceEvent;
     simtime_t serviceTime;
 
-    int packetsDropped;
+    bool statusSentQueue;
 
-    bool fullBufferQueue;
-
+    //funciones
     void protocol2(cMessage *msg);
+    void sendPacket();
+
 public:
     Queue();
     virtual ~Queue();
@@ -45,42 +46,40 @@ void Queue::initialize() {
 
     packetDropVector.record(0);
     endServiceEvent = new cMessage("endService");
-    fullBufferQueue = false;
+    statusSentQueue = false;
 
 }
-
 
 void Queue::finish() {
 }
 
 void Queue::protocol2(cMessage *msg){
-    const int bufferMaxSize = par("bufferSize").intValue();
-    int umbral = 0.8 * bufferMaxSize;
-
-    //Si el buffer se encuentra mas alla de su capacidad, borramos el mensaje y aumentamos la cantidad de paquetes dropeados
-    if (buffer.getLength() >= bufferMaxSize){
+    //Si el buffer se encuentra mas alla de su capacidad, borramos el mensaje
+    if (buffer.getLength() >= par("bufferSize").intValue()){
         delete msg;
 
         this->bubble("packet dropped");
         packetDropVector.record(1);
-
     } else {
+        float umbral = 0.80 * par("bufferSize").intValue();
+        float umbral_min = 0.25 * par("bufferSize").intValue();
+
         //Si el buffer supera el umbral, crea un mensaje de estatus
-        if (buffer.getLength() >= umbral && !fullBufferQueue){
+        if (buffer.getLength() >= umbral && !statusSentQueue){
             cPacket *statusMsg = new cPacket("statusMsg");
             statusMsg->setKind(2); //Setea su tipo en 2
-            statusMsg->setByteLength(1); //Asigna su tamaño de 1 byte
-            fullBufferQueue = true;
+            statusMsg->setByteLength(20);
+            statusSentQueue = true;
             buffer.insertBefore(buffer.front(), statusMsg);
 
-        } else if (buffer.getLength() >= umbral && fullBufferQueue){
+        } else if (buffer.getLength() < umbral_min && statusSentQueue){
             cPacket *statusMsg = new cPacket("statusMsg");
-            statusMsg->setKind(3); //Setea su tipo en 2
-            statusMsg->setByteLength(1); //Asigna su tamaño de 1 byte
-            fullBufferQueue = false;
+            statusMsg->setKind(3); //Setea su tipo en 3
+            statusMsg->setByteLength(20);
+            statusSentQueue = false;
             buffer.insertBefore(buffer.front(), statusMsg);
         }
-        //Insertamos mensaje al buffer
+
         buffer.insert(msg);
         bufferSizeVector.record(buffer.getLength());
 
@@ -90,20 +89,23 @@ void Queue::protocol2(cMessage *msg){
     }
 }
 
+void Queue::sendPacket(){
+    if (!buffer.isEmpty()) {
+        // dequeue packet
+        cPacket *pkt = (cPacket*) buffer.pop();
+        //send packet
+        send(pkt, "out");
+        serviceTime = pkt->getDuration();
+        scheduleAt(simTime() + serviceTime, endServiceEvent);
+    }
+}
+
 void Queue::handleMessage(cMessage *msg) {
 
     bufferSizeVector.record(buffer.getLength());
     // if msg is signaling an endServiceEvent
     if (msg == endServiceEvent) {
-        // if packet in buffer, send next one
-        if (!buffer.isEmpty()) {
-            // dequeue packet
-            cPacket *pkt = (cPacket*) buffer.pop();
-            // send packet
-            send(pkt, "out");
-            serviceTime = pkt->getDuration();
-            scheduleAt(simTime() + serviceTime, endServiceEvent);
-        }
+        sendPacket();
     } else { // if msg is a data packet
         protocol2(msg);
         // enqueue the packet

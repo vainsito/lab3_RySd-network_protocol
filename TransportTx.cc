@@ -42,7 +42,9 @@ void TransportTx::initialize() {
     packetRate = 1.0;
 }
 
-void TransportTx::finish() {}
+void TransportTx::finish() {
+
+}
 
 void TransportTx::handleMessage(cMessage *msg) {
     // Primer caso, si el mensaje es el evento de fin de servicio
@@ -55,7 +57,7 @@ void TransportTx::handleMessage(cMessage *msg) {
             send(pkt, "toOut$o");
             // Empiezo un nuevo servicio
             serviceTime = pkt->getDuration();
-            scheduleAt(simTime() + serviceTime, endServiceEvent);
+            scheduleAt(simTime() + serviceTime*packetRate, endServiceEvent);
         }
     } else { // Si el mensaje es un paquete de datos
         if (buffer.getLength() >= par("bufferSize").intValue()) {
@@ -83,4 +85,4 @@ void TransportTx::handleMessage(cMessage *msg) {
     }
 }
 
-#endif
+#endif /* TRANSPORTTX */

@@ -12,21 +12,23 @@ using namespace omnetpp;
 class TransportRx: public cSimpleModule {
     private:
         cQueue buffer; //El buffer mismo
-        cQueue bufferStatus; //Informacion del buffer
+        cQueue bufferStatus; //Mensajes de estados del buffer
 
-        bool fullBuffer;
+        bool statusSent;
 
         cMessage *endServiceEvent;
         cMessage *sendStatusEvent; //Evento que informa a la entidad que envie una respuesta
 
-        int packetsDropped;
         cOutVector bufferSizeVector;
         cOutVector bufferDropVector;
 
         simtime_t serviceTime;
 
-        //Funcion protocolo
+        //Funciones
         void protocol1(cMessage *msg);
+        void sendPacket();
+        void sendStatus();
+
     public:
         TransportRx();
         virtual ~TransportRx();
@@ -37,8 +39,6 @@ class TransportRx: public cSimpleModule {
 };
 
 Define_Module(TransportRx);
-
-//Definicion metodos protected
 
 TransportRx::TransportRx(){
     endServiceEvent = NULL;
@@ -54,7 +54,6 @@ void TransportRx::initialize(){
     buffer.setName("Receptor buffer");
     bufferStatus.setName("Receptor status buffer");
 
-    packetsDropped = 0;
     endServiceEvent = new cMessage("endService");
     sendStatusEvent = new cMessage("sendStatus");
 
@@ -62,8 +61,7 @@ void TransportRx::initialize(){
     bufferDropVector.setName("packetDrop");
 
     bufferDropVector.record(0);
-    fullBuffer = false;
-
+    statusSent = false;
 
 }
 
@@ -77,26 +75,26 @@ void TransportRx::protocol1(cMessage *msg){
             scheduleAt(simTime()+0, sendStatusEvent);
         }
     } else {
-        const int bufferMaxSize = par("bufferSize").intValue();
-        int umbral = 0.8 * bufferMaxSize;
+        float umbral = 0.80 * par("bufferSize").intValue();
+        float umbral_min = 0.25 * par("bufferSize").intValue();
 
-        //Si el buffer se encuentra mas alla de su capacidad, borramos el mensaje y aumentamos la cantidad de paquetes dropeados
-            //Si el buffer supera el umbral, crea un mensaje de estatus
-        if (buffer.getLength() >= umbral && !fullBuffer){
+        if (buffer.getLength() >= umbral && !statusSent){
+            //Enviamos mensaje de tipo 2 (Reducir tasa de transmision)
             cPacket *statusMsg = new cPacket("statusMsg");
             statusMsg->setKind(2); //Setea su tipo en 2
-            statusMsg->setByteLength(20); //Asigna su tamaño de 1 byte
-            buffer.insertBefore(buffer.front(), statusMsg);
-            fullBuffer = true;
+            statusMsg->setByteLength(20);
+            send(statusMsg,"toOut$o");
+            statusSent = true;
 
-        } else if (buffer.getLength() >= umbral && fullBuffer){
+        } else if (buffer.getLength() < umbral_min && statusSent){
+            //Enviamos mensaje de tipo 3 (Aumentar tasa de transmision)
             cPacket *statusMsg = new cPacket("statusMsg");
-            statusMsg->setKind(3); //Setea su tipo en 2
-            statusMsg->setByteLength(20); //Asigna su tamaño de 1 byte
-            fullBuffer = false;
-            buffer.insertBefore(buffer.front(), statusMsg);
+            statusMsg->setKind(3); //Setea su tipo en 3
+            statusMsg->setByteLength(20);
+            send(statusMsg,"toOut$o");
+            statusSent = false;
         }
-            //Insertamos mensaje al buffer
+        //Insertamos mensaje al buffer
         buffer.insert(msg);
         bufferSizeVector.record(buffer.getLength());
 
@@ -105,28 +103,39 @@ void TransportRx::protocol1(cMessage *msg){
         }
     }
 }
+
+//Funcion que envia paquetes
+void TransportRx::sendPacket(){
+    if (!buffer.isEmpty()) {
+        // dequeue packet
+        cPacket *pkt = (cPacket*) buffer.pop();
+        //send packet
+        send(pkt, "toApp");
+        serviceTime = pkt->getDuration();
+        scheduleAt(simTime() + serviceTime, endServiceEvent);
+    }
+}
+
+//Funcion que envia los mensajes de estatus
+void TransportRx::sendStatus(){
+    if (!bufferStatus.isEmpty()){
+        // Si nuestra queue de estado no esta vacia, desencolamos y enviamos como con EndService
+        cPacket *statuspkt = (cPacket*) bufferStatus.pop();
+        //Mandamos el estado
+        send(statuspkt,"toOut$o");
+
+        serviceTime = statuspkt->getDuration();
+        scheduleAt(simTime() + serviceTime, sendStatusEvent);
+    }
+}
+
 void TransportRx::handleMessage(cMessage *msg){
         // if msg is signaling an endServiceEvent
         if (msg == endServiceEvent) {
             // if packet in buffer, send next one
-            if (!buffer.isEmpty()) {
-                // dequeue packet
-                cPacket *pkt = (cPacket*) buffer.pop();
-                // send packet
-                send(pkt, "toApp");
-                serviceTime = pkt->getDuration();
-                scheduleAt(simTime() + serviceTime, endServiceEvent);
-            }
+            sendPacket();
         } else if (msg == sendStatusEvent) {
-            if (!bufferStatus.isEmpty()){
-                // Si nuestra queue de estado no esta vacia, desencolamos y enviamos como con EndService
-                cPacket *statuspkt = (cPacket*) bufferStatus.pop();
-                //Mandamos el estado
-                send(statuspkt,"toOut$o");
-
-                serviceTime = statuspkt->getDuration();
-                scheduleAt(simTime() + serviceTime, sendStatusEvent);
-            }
+            sendStatus();
         } else { // if msg is a data packet
             if (buffer.getLength() >= par("bufferSize").intValue()){
                 delete msg;
@@ -136,7 +145,6 @@ void TransportRx::handleMessage(cMessage *msg){
                 protocol1(msg);
             }
         }
-        // enqueue the packet
 }
 
-#endif
+#endif /* TRANSPORTRX */
