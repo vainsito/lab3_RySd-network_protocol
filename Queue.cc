@@ -8,17 +8,17 @@ using namespace omnetpp;
 
 class Queue: public cSimpleModule {
 private:
-    cOutVector bufferSizeVector;
+    cOutVector bufferSizeVector; 
     cOutVector packetDropVector;
     cQueue buffer;
-    cMessage *endServiceEvent;
+    cMessage *endServiceEvent; 
     simtime_t serviceTime;
 
     bool statusSentQueue;
 
     //funciones
-    void protocol2(cMessage *msg);
-    void sendPacket();
+    void protocol2(cMessage *msg); //Protocolo de encolamiento
+    void sendPacket(); //Envia el paquete
 
 public:
     Queue();
@@ -53,6 +53,7 @@ void Queue::initialize() {
 void Queue::finish() {
 }
 
+
 void Queue::protocol2(cMessage *msg){
     //Si el buffer se encuentra mas alla de su capacidad, borramos el mensaje
     if (buffer.getLength() >= par("bufferSize").intValue()){
@@ -64,15 +65,15 @@ void Queue::protocol2(cMessage *msg){
         float umbral = 0.80 * par("bufferSize").intValue();
         float umbral_min = 0.25 * par("bufferSize").intValue();
 
-        //Si el buffer supera el umbral, crea un mensaje de estatus
-        if (buffer.getLength() >= umbral && !statusSentQueue){
+        
+        if (buffer.getLength() >= umbral && !statusSentQueue){ //Si el buffer se encuentra en un estado critico, enviamos un mensaje de estado (tipo 2)
             cPacket *statusMsg = new cPacket("statusMsg");
-            statusMsg->setKind(2); //Setea su tipo en 2
+            statusMsg->setKind(2); 
             statusMsg->setByteLength(20);
             statusSentQueue = true;
             buffer.insertBefore(buffer.front(), statusMsg);
-
-        } else if (buffer.getLength() < umbral_min && statusSentQueue){
+        
+        } else if (buffer.getLength() < umbral_min && statusSentQueue){ //Si el buffer se encuentra con un tamaño menor al umbral minimo, enviamos un mensaje de estado (tipo 3)
             cPacket *statusMsg = new cPacket("statusMsg");
             statusMsg->setKind(3); //Setea su tipo en 3
             statusMsg->setByteLength(20);
@@ -80,6 +81,7 @@ void Queue::protocol2(cMessage *msg){
             buffer.insertBefore(buffer.front(), statusMsg);
         }
 
+        //Si el buffer no se encuentra en ninguna de las situaciones anteriores, encolamos el mensaje
         buffer.insert(msg);
         bufferSizeVector.record(buffer.getLength());
 
@@ -89,6 +91,7 @@ void Queue::protocol2(cMessage *msg){
     }
 }
 
+//Funcion que envia el paquete
 void Queue::sendPacket(){
     if (!buffer.isEmpty()) {
         // dequeue packet

@@ -10,9 +10,13 @@ class TransportTx: public cSimpleModule {
 private:
     cOutVector bufferSizeQueue; // Vector para el tam de el buffer de la cola
     cOutVector packetDropQueue;
+
     cQueue buffer;
+
     cMessage *endServiceEvent;
+
     simtime_t serviceTime;
+    
     float packetRate;
 public:
     TransportTx();
@@ -34,11 +38,11 @@ TransportTx::~TransportTx() {
 }
 
 void TransportTx::initialize() {
-    buffer.setName("buffer"); // Nombre del buffer
-    bufferSizeQueue.setName("bufferSizeQueue"); // Nombre del vector de tamano del buffer
+    buffer.setName("buffer"); 
+    bufferSizeQueue.setName("bufferSizeQueue"); 
     packetDropQueue.setName("packetDropQueue"); 
-    packetDropQueue.record(0); // Inicializa el vector en 0
-    endServiceEvent = new cMessage("endService"); // Creo el mensaje de fin de servicio
+    packetDropQueue.record(0); 
+    endServiceEvent = new cMessage("endService"); 
     packetRate = 1.0;
 }
 
@@ -57,7 +61,7 @@ void TransportTx::handleMessage(cMessage *msg) {
             send(pkt, "toOut$o");
             // Empiezo un nuevo servicio
             serviceTime = pkt->getDuration();
-            scheduleAt(simTime() + serviceTime*packetRate, endServiceEvent);
+            scheduleAt(simTime() + serviceTime*packetRate, endServiceEvent); //Aqui toma relevancia packetRate para cambiar el tiempo en el que va a schedulear el final del servicio en relacion a nuestras necesidades
         }
     } else { // Si el mensaje es un paquete de datos
         if (buffer.getLength() >= par("bufferSize").intValue()) {

@@ -47,7 +47,7 @@ void Sink::handleMessage(cMessage * msg) {
     // update stats
     delayStats.collect(delay);
     delayVector.record(delay);
-    packetUsedVector.record(1);
+    packetUsedVector.record(1); //Dejamos registro de que se uso un paquete en su vector
     // delete msg
     delete(msg);
 }

@@ -50,12 +50,12 @@ void Generator::handleMessage(cMessage *msg) {
     // create new packet
     cPacket *pkt = new cPacket("packet");
 
-    packetSent++;
-    genPacketVector.record(packetSent);
+    packetSent++; // incrementamos el contador de paquetes enviados
+    genPacketVector.record(packetSent); // guardamos dentro del vector el numero de paquetes enviados
 
     pkt->setByteLength(par("packetByteSize"));
 
-    transmissionStats.collect(pkt->getByteLength());
+    transmissionStats.collect(pkt->getByteLength()); // recolectamos el tamaño del paquete
 
     // send to the output
     send(pkt, "out");

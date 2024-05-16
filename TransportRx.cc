@@ -68,13 +68,15 @@ void TransportRx::initialize(){
 void TransportRx::finish(){
 }
 
+//La unica diferencia entre el protocolo 1 y 2 es que en el 1 se encuentra el condicional que verifica si msg es mensaje de estado del buffer
 void TransportRx::protocol1(cMessage *msg){
+    //Si el mensaje es de tipo 2 o 3, lo insertamos en el buffer de estados
     if (msg->getKind() == 2 || msg->getKind() == 3){
         bufferStatus.insert(msg);
         if(!sendStatusEvent->isScheduled()){
             scheduleAt(simTime()+0, sendStatusEvent);
         }
-    } else {
+    } else { //Si no, lo insertamos en el buffer de mensajes haciendo el chequeo de si se debe enviar un mensaje de estado
         float umbral = 0.80 * par("bufferSize").intValue();
         float umbral_min = 0.25 * par("bufferSize").intValue();
 
@@ -91,10 +93,10 @@ void TransportRx::protocol1(cMessage *msg){
             cPacket *statusMsg = new cPacket("statusMsg");
             statusMsg->setKind(3); //Setea su tipo en 3
             statusMsg->setByteLength(20);
-            send(statusMsg,"toOut$o");
+            send(statusMsg,"toOut$o"); 
             statusSent = false;
         }
-        //Insertamos mensaje al buffer
+        //Si el buffer no se encuentra en ninguna de las situaciones anteriores, encolamos el mensaje
         buffer.insert(msg);
         bufferSizeVector.record(buffer.getLength());
 
