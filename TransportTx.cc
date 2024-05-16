@@ -72,9 +72,9 @@ void TransportTx::handleMessage(cMessage *msg) {
         } else {
             // Encolo el mensaje dependiendo del tipo de paquete
             if (msg->getKind() == 2){
-                packetRate = packetRate*2; // Si es un paquete de tipo 2, se duplica la tasa de paquetes
+                packetRate = packetRate*2; // Si es un paquete de tipo 2, se reduce la tasa de paquetes
             } else if (msg->getKind() == 3){
-                packetRate = packetRate/2; // Si es un paquete de tipo 3, se reduce la tasa de paquetes
+                packetRate = packetRate/2; // Si es un paquete de tipo 3, duplica tasa de paquetes
             } else{
                 // Encolo el paquete
                 buffer.insert(msg);
