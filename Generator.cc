@@ -11,6 +11,7 @@ private:
     cMessage *sendMsgEvent;
     cStdDev transmissionStats;
     cOutVector packetGenVector;
+    int packetGen;
 public:
     Generator();
     virtual ~Generator();
@@ -37,6 +38,8 @@ void Generator::initialize() {
     sendMsgEvent = new cMessage("sendEvent");
     // schedule the first event at random time
     scheduleAt(par("generationInterval"), sendMsgEvent);
+    packetGen = 0;
+    packetGenVector.record(0);
 }
 
 void Generator::finish() {
@@ -47,7 +50,8 @@ void Generator::handleMessage(cMessage *msg) {
     // create new packet
     cPacket *pkt;
     pkt = new cPacket("packet");
-    packetGenVector.record(1);
+    packetGen++;
+    packetGenVector.record(packetGen);
     pkt->setByteLength(par("packetByteSize"));
     // send to the output
     send(pkt, "out");

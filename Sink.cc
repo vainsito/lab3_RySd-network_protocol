@@ -11,6 +11,7 @@ private:
     cStdDev delayStats;
     cOutVector delayVector;
     cOutVector packetUsedVector;
+    int packetUsed;
 public:
     Sink();
     virtual ~Sink();
@@ -33,6 +34,7 @@ void Sink::initialize(){
     delayStats.setName("TotalDelay");
     delayVector.setName("Delay");
     packetUsedVector.setName("PacketUsed");
+    packetUsed = 0;
 }
 
 void Sink::finish(){
@@ -47,7 +49,8 @@ void Sink::handleMessage(cMessage * msg) {
     // update stats
     delayStats.collect(delay);
     delayVector.record(delay);
-    packetUsedVector.record(1);
+    packetUsed++;
+    packetUsedVector.record(packetUsed);
     // delete msg
     delete(msg);
 }

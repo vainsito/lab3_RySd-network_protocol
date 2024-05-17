@@ -1,8 +1,8 @@
 version 3
-run General-0-20240513-13:54:27-11078
+run General-0-20240516-22:49:53-38951
 attr configname General
-attr datetime 20240513-13:54:27
-attr datetimef 20240513-135427
+attr datetime 20240516-22:49:53
+attr datetimef 20240516-224953
 attr experiment General
 attr inifile omnetpp.ini
 attr iterationvars ""
@@ -10,7 +10,7 @@ attr iterationvarsd ""
 attr iterationvarsf ""
 attr measurement ""
 attr network Network
-attr processid 11078
+attr processid 38951
 attr repetition 0
 attr replication #0
 attr resultdir results
@@ -23,7 +23,7 @@ config Network.queue.bufferSize 200
 config Network.nodeRx.queue.bufferSize 200
 config Network.nodeRx.queue.serviceTime exponential(0.001)
 config Network.nodeTx.gen.packetByteSize 12500
-config Network.nodeTx.gen.generationInterval exponential(0.1)
+config Network.nodeTx.gen.generationInterval exponential(0.2)
 config Network.nodeTx.queue.bufferSize 2000000
 config Network.nodeTx.queue.serviceTime exponential(0.001)
 
@@ -46,7 +46,7 @@ attr mutable ""
 par Network.queue.out.channel delay 0.0001s
 attr mutable ""
 attr unit s
-par Network.queue.out.channel datarate 1e+06bps
+par Network.queue.out.channel datarate 500000bps
 attr mutable ""
 attr unit bps
 par Network.queue.out.channel ber 0
@@ -54,7 +54,7 @@ attr mutable ""
 par Network.queue.out.channel per 0
 attr mutable ""
 par Network.nodeTx.gen typename "\"Generator\""
-par Network.nodeTx.gen generationInterval exponential(0.1)
+par Network.nodeTx.gen generationInterval exponential(0.2)
 par Network.nodeTx.gen packetByteSize 12500
 par Network.nodeTx.queue typename "\"Queue\""
 par Network.nodeTx.queue serviceTime exponential(0.001)
@@ -69,7 +69,7 @@ attr mutable ""
 par Network.nodeRx.queue.out.channel delay 0s
 attr mutable ""
 attr unit s
-par Network.nodeRx.queue.out.channel datarate 500000bps
+par Network.nodeRx.queue.out.channel datarate 1e+06bps
 attr mutable ""
 attr unit bps
 par Network.nodeRx.queue.out.channel ber 0
@@ -77,8 +77,8 @@ attr mutable ""
 par Network.nodeRx.queue.out.channel per 0
 attr mutable ""
 par Network.nodeRx.sink typename "\"Sink\""
-scalar Network.nodeRx.sink "Avg delay" 14.8874685498
-scalar Network.nodeRx.sink "Number of packets" 298
+scalar Network.nodeRx.sink "Avg delay" 2.3986933132428
+scalar Network.nodeRx.sink "Number of packets" 976
 par Network.nodeRx.queue typename "\"Queue\""
 par Network.nodeRx.queue serviceTime exponential(0.001)
 par Network.nodeRx.queue bufferSize 200

@@ -13,6 +13,7 @@ private:
     cQueue buffer;
     cMessage *endServiceEvent;
     simtime_t serviceTime;
+    int packetDrop;
 public:
     Queue();
     virtual ~Queue();
@@ -36,6 +37,7 @@ void Queue::initialize() {
     buffer.setName("buffer");
     bufferSizeVector.setName("bufferSizeQueue");
     packetDropVector.setName("packetsDrop");
+    packetDrop = 0;
     packetDropVector.record(0);
     endServiceEvent = new cMessage("endService");
 }
@@ -61,7 +63,8 @@ void Queue::handleMessage(cMessage *msg) {
             // drop the packet
             delete msg;
             this->bubble("packet-dropped");
-            packetDropVector.record(1);
+            packetDrop++;
+            packetDropVector.record(packetDrop);
         } else {
             buffer.insert(msg);
             bufferSizeVector.record(buffer.getLength());
